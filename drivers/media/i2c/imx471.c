@@ -26,6 +26,9 @@
 /* Software reset */
 #define IMX471_REG_SW_RESET		0x0103
 
+/* Grouped parameter hold */
+#define IMX471_REG_PARAM_HOLD		0x0104
+
 /* Chip ID */
 #define IMX471_REG_CHIP_ID		0x0016
 #define IMX471_CHIP_ID			0x0471
@@ -496,22 +499,30 @@ static int imx471_set_ctrl(struct v4l2_ctrl *ctrl)
 
 	switch (ctrl->id) {
 	case V4L2_CID_ANALOGUE_GAIN:
+		imx471_write_reg(imx471, IMX471_REG_PARAM_HOLD, 1, 1);
 		/* Analog gain = 1024/(1024 - ctrl->val) times */
 		ret = imx471_write_reg(imx471, IMX471_REG_ANALOG_GAIN, 2,
 				       ctrl->val);
+		imx471_write_reg(imx471, IMX471_REG_PARAM_HOLD, 1, 0);
 		break;
 	case V4L2_CID_DIGITAL_GAIN:
+		imx471_write_reg(imx471, IMX471_REG_PARAM_HOLD, 1, 1);
 		ret = imx471_write_reg(imx471, IMX471_REG_DIG_GAIN_GLOBAL, 2,
 				       ctrl->val);
+		imx471_write_reg(imx471, IMX471_REG_PARAM_HOLD, 1, 0);
 		break;
 	case V4L2_CID_EXPOSURE:
+		imx471_write_reg(imx471, IMX471_REG_PARAM_HOLD, 1, 1);
 		ret = imx471_write_reg(imx471, IMX471_REG_EXPOSURE, 2,
 				       ctrl->val);
+		imx471_write_reg(imx471, IMX471_REG_PARAM_HOLD, 1, 0);
 		break;
 	case V4L2_CID_VBLANK:
+		imx471_write_reg(imx471, IMX471_REG_PARAM_HOLD, 1, 1);
 		/* Update FLL that meets expected vertical blanking */
 		ret = imx471_write_reg(imx471, IMX471_REG_FLL, 2,
 				       imx471->cur_mode->height + ctrl->val);
+		imx471_write_reg(imx471, IMX471_REG_PARAM_HOLD, 1, 0);
 		break;
 	case V4L2_CID_TEST_PATTERN:
 		ret = imx471_write_reg(imx471, IMX471_REG_TEST_PATTERN,

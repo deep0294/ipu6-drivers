@@ -1018,7 +1018,7 @@ static int imx471_get_pm_resources(struct device *dev)
 	 * via the "intel,retimer-settle-delay-us" firmware property, mirroring
 	 * the per-module registry override used by the Windows sensor driver.
 	 */
-	imx471->settle_delay_us = 40000;
+	imx471->settle_delay_us = 75000;
 	fwnode_property_read_u32(dev_fwnode(dev), "intel,retimer-settle-delay-us",
 				 &imx471->settle_delay_us);
 

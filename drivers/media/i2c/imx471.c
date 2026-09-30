@@ -822,8 +822,10 @@ static int imx471_start_streaming(struct imx471 *imx471)
 	if (ret)
 		return ret;
 
-	/* Apply customized values from user */
-	ret =  __v4l2_ctrl_handler_setup(imx471->sd.ctrl_handler);
+	/* Apply customized values from user under parameter hold */
+	imx471_write_reg(imx471, IMX471_REG_PARAM_HOLD, 1, 1);
+	ret = __v4l2_ctrl_handler_setup(imx471->sd.ctrl_handler);
+	imx471_write_reg(imx471, IMX471_REG_PARAM_HOLD, 1, 0);
 	if (ret)
 		return ret;
 

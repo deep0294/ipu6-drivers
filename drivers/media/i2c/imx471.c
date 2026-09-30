@@ -240,8 +240,8 @@ static const struct imx471_reg mode_1928x1088_regs[] = {
 	{0x0114, 0x03},
 	{0x0342, 0x0a},
 	{0x0343, 0x00},
-	{0x0340, 0x13},
-	{0x0341, 0xb0},
+	{0x0340, 0x05},
+	{0x0341, 0x1c},
 	{0x0344, 0x00},
 	{0x0345, 0x00},
 	{0x0346, 0x01},
@@ -281,8 +281,8 @@ static const struct imx471_reg mode_1928x1088_regs[] = {
 	{0x030e, 0x00},
 	{0x030f, 0x53},
 	{0x0310, 0x01},
-	{0x0202, 0x13},
-	{0x0203, 0x9e},
+	{0x0202, 0x04},
+	{0x0203, 0xf6},
 	{0x0204, 0x00},
 	{0x0205, 0x00},
 	{0x020e, 0x01},
@@ -292,6 +292,10 @@ static const struct imx471_reg mode_1928x1088_regs[] = {
 	{0x3ffe, 0x00},
 	{0x3fff, 0x8a},
 	{0x5f0a, 0xb6},
+	/* Manual Tclk-post for Synopsys CSI host (460ns for 400 Mbps) */
+	{0x4802, 0x20},
+	{0x4820, 0x01},
+	{0x4821, 0xcc},
 };
 
 static const char * const imx471_test_pattern_menu[] = {
@@ -511,19 +515,34 @@ static int imx471_set_ctrl(struct v4l2_ctrl *ctrl)
 				       ctrl->val);
 		imx471_write_reg(imx471, IMX471_REG_PARAM_HOLD, 1, 0);
 		break;
-	case V4L2_CID_EXPOSURE:
+	case V4L2_CID_EXPOSURE: {
+		u32 fll = imx471->cur_mode->height + imx471->vblank->val;
+		u32 exp_val = ctrl->val;
+
+		if (fll > 18 && exp_val > fll - 18)
+			exp_val = fll - 18;
+
 		imx471_write_reg(imx471, IMX471_REG_PARAM_HOLD, 1, 1);
 		ret = imx471_write_reg(imx471, IMX471_REG_EXPOSURE, 2,
-				       ctrl->val);
+				       exp_val);
 		imx471_write_reg(imx471, IMX471_REG_PARAM_HOLD, 1, 0);
 		break;
-	case V4L2_CID_VBLANK:
+	}
+	case V4L2_CID_VBLANK: {
+		u32 fll = imx471->cur_mode->height + ctrl->val;
+		u32 cur_exp = imx471->exposure->val;
+
 		imx471_write_reg(imx471, IMX471_REG_PARAM_HOLD, 1, 1);
 		/* Update FLL that meets expected vertical blanking */
-		ret = imx471_write_reg(imx471, IMX471_REG_FLL, 2,
-				       imx471->cur_mode->height + ctrl->val);
+		ret = imx471_write_reg(imx471, IMX471_REG_FLL, 2, fll);
+		if (fll > 18 && cur_exp > fll - 18) {
+			cur_exp = fll - 18;
+			imx471_write_reg(imx471, IMX471_REG_EXPOSURE, 2,
+					 cur_exp);
+		}
 		imx471_write_reg(imx471, IMX471_REG_PARAM_HOLD, 1, 0);
 		break;
+	}
 	case V4L2_CID_TEST_PATTERN:
 		ret = imx471_write_reg(imx471, IMX471_REG_TEST_PATTERN,
 				       2, ctrl->val);
